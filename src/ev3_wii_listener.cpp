@@ -1,16 +1,14 @@
 #include "ros/ros.h"
 #include "std_msgs/Int32.h"
-#include "wiimote/State.h"
+#include "ev3_wiimote/State.h"
 #include <iostream>
 #include "ev3_wiimote/ev3dev.h"
 
 using namespace ev3dev;
 
-int estado_motor;
+int status_motor;
 large_motor *ptr_m_l;
 large_motor *ptr_m_r;
-
-//void wii_buttons_callback_int(const std_msgs::Int32::ConstPtr& msg);
 
 void wii_buttons_callback_int(const std_msgs::Int32::ConstPtr& msg)
 {
@@ -42,24 +40,25 @@ void wii_buttons_callback_int(const std_msgs::Int32::ConstPtr& msg)
   }
 }
  
-void wii_buttons_callback(const wiimote::State& msg)
+void wii_buttons_callback(const ev3_wiimote::State& msg)
 {
-  if (msg.buttons[wiimote::State::MSG_BTN_1] == true)
+  // wiimote::State::MSG_BTN_1]
+  if (msg.buttons[ev3_wiimote::State::MSG_BTN_1] == true)
   {
-    if (estado_motor == 0)
+    if (status_motor == 0)
     {
-      ROS_INFO("Adelante");
-      estado_motor = 1;
+      ROS_INFO("Go");
+      status_motor = 1;
       ptr_m_l->run_forever();
       ptr_m_r->run_forever();
     }
   }
   else
   {
-    if (estado_motor == 1)
+    if (status_motor == 1)
     {
-      ROS_INFO("Parado");
-      estado_motor = 0;
+      ROS_INFO("Stop");
+      status_motor = 0;
       ptr_m_l->stop();
       ptr_m_r->stop();
     }
@@ -72,7 +71,7 @@ int main(int argc, char **argv)
 
   // Motor initiallization
   ROS_INFO("ev3_wii motors initialization");
-  estado_motor = 0;
+  status_motor = 0;
   large_motor _motor_left(OUTPUT_A);
   large_motor _motor_right(OUTPUT_B);
   ptr_m_l = &_motor_left;
