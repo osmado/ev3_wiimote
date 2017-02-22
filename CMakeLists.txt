@@ -161,6 +161,7 @@ target_link_libraries(ev3_wii_listener
 )
 
 target_link_libraries(ev3_wii_talker
+  ev3dev
   ${CWIID_LIBRARY} 
   ${catkin_LIBRARIES}
 )

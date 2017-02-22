@@ -11,6 +11,9 @@ Environment setup
 I created an ev3dev image including ros according to moriarty's project "https://github.com/moriarty/ros-ev3" (thanks a lot for this project).  But I made a little modification in order to run ros_core on ev3dev (view issue #2 of moriarty's project).
 After that, I used libcwiid in order to connect ev3 and wiimote.  Ros already has a wimote node but I have not to use it because it kept busy all CPU time.
 
+Sytem info:
+Kernel: 3.16.7-ckt21-9-ev3dev-ev3
+
 Source code
 -----------
 The source code of this project has two ros nodes:

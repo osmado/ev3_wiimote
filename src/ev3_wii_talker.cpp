@@ -3,25 +3,29 @@
 #include "std_msgs/Int32.h"
 #include <sstream>
 
+#include "ev3_wiimote/ev3dev.h"
 #include <bluetooth/bluetooth.h>
 #include <cwiid.h>
 
+using namespace ev3dev;
 
 cwiid_mesg_callback_t cwiid_callback;
 void set_led_state(cwiid_wiimote_t *wiimote, unsigned char led_state);
 void set_rpt_mode(cwiid_wiimote_t *wiimote, unsigned char rpt_mode);
 void print_state(struct cwiid_state *state);
+cwiid_wiimote_t* askConnection();
 ros::Publisher number_publisher;
-
+cwiid_wiimote_t *ptrWiimote;
 cwiid_err_t err;
+
 void err(cwiid_wiimote_t *wiimote, const char *s, va_list ap)
 {
   if (wiimote)
-    printf("%d:", cwiid_get_id(wiimote));
+    ROS_ERROR("%d: %s", cwiid_get_id(wiimote), s);
   else 
-    printf("-1:");
-  vprintf(s, ap);
-  printf("\n");
+    ROS_ERROR("-1: %s", s);
+//  vprintf(s, ap);
+//  printf("\n");
 }
 
 void set_led_state(cwiid_wiimote_t *wiimote, unsigned char led_state)
@@ -144,12 +148,18 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
 				//			       mesg[i].motionplus_mesg.low_speed[2]);
 				break;
 			case CWIID_MESG_ERROR:
-				if (cwiid_close(wiimote))
+      {
+        ROS_ERROR("Error message received");
+				if (wiimote != NULL && cwiid_close(wiimote))
 				{
 					ROS_ERROR("Error on wiimote disconnect\n");
-					exit(-1);
+//					exit(-1);
 				}
-				exit(0);
+        ptrWiimote = NULL;
+//				exit(0);
+       ros::Rate loop_rate(0.1);
+       ROS_ERROR("wiimote apagado");
+      }
 				break;
 			default:
 				ROS_DEBUG("Unknown Report");
@@ -158,14 +168,8 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
 	}
 }
 
-
-int main(int argc, char **argv)
+cwiid_wiimote_t* askConnection()
 {
-  ros::init(argc, argv, "talker");
-  ros::NodeHandle node;
-//  ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-  ros::Rate loop_rate(10);
-
   //////////////////////////////////////////////////////////////////
   // wiimote initialization
   //////////////////////////////////////////////////////////////////
@@ -173,11 +177,11 @@ int main(int argc, char **argv)
   cwiid_wiimote_t *wiimote;	/* wiimote handle */
   struct cwiid_state state;	/* wiimote state */
   bdaddr_t bdaddr;	/* bluetooth device address */
-  unsigned char mesg = 0;
+//  unsigned char mesg = 0;
   unsigned char led_state = 0;
   unsigned char rpt_mode = 0;
-  unsigned char rumble = 0;
-  int exit = 0;
+//  unsigned char rumble = 0;
+//  int exit = 0;
 
   cwiid_set_err(err);
   //bdaddr = *BDADDR_ANY;
@@ -185,10 +189,15 @@ int main(int argc, char **argv)
 
   /* Connect to the wiimote */
   ROS_DEBUG("Put Wiimote in discoverable mode now (press 1+2)...\n");
-  if (!(wiimote = cwiid_open(&bdaddr, 0))) 
+  led::all_off();
+  led::red_right.on();
+  wiimote = cwiid_open(&bdaddr, 0);
+  if (wiimote == NULL ) 
   {
     ROS_ERROR("Unable to connect to wiimote\n");
-    return -1;
+    led::red_left.on();
+    ros::Rate loop_rate(10);
+    return NULL;
   }
   if (cwiid_set_mesg_callback(wiimote, cwiid_callback)) 
   {
@@ -204,6 +213,60 @@ int main(int argc, char **argv)
   rpt_mode |=  CWIID_RPT_BTN;
   set_rpt_mode(wiimote, rpt_mode);
   cwiid_enable(wiimote, CWIID_FLAG_MESG_IFC);
+  led::all_off();
+  led::green_right.on();
+  led::green_left.on();
+  return wiimote;
+}
+
+int main(int argc, char **argv)
+{
+//  cwiid_wiimote_t *wiimote;
+  ros::init(argc, argv, "talker");
+  ros::NodeHandle node;
+//  ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
+  ros::Rate loop_rate(0.1);
+  led::red_right.on();
+  led::red_left.on();
+ 
+//   //////////////////////////////////////////////////////////////////
+//   // wiimote initialization
+//   //////////////////////////////////////////////////////////////////
+// 
+//   cwiid_wiimote_t *wiimote;	/* wiimote handle */
+//   struct cwiid_state state;	/* wiimote state */
+//   bdaddr_t bdaddr;	/* bluetooth device address */
+//   unsigned char mesg = 0;
+//   unsigned char led_state = 0;
+//   unsigned char rpt_mode = 0;
+//   unsigned char rumble = 0;
+//   int exit = 0;
+// 
+//   cwiid_set_err(err);
+//   //bdaddr = *BDADDR_ANY;
+//   bdaddr = {{0,0,0,0,0,0}};
+// 
+//   /* Connect to the wiimote */
+//   ROS_DEBUG("Put Wiimote in discoverable mode now (press 1+2)...\n");
+//   if (!(wiimote = cwiid_open(&bdaddr, 0))) 
+//   {
+//     ROS_ERROR("Unable to connect to wiimote\n");
+//     return -1;
+//   }
+//   if (cwiid_set_mesg_callback(wiimote, cwiid_callback)) 
+//   {
+//     ROS_ERROR("Unable to set message callback\n");
+//   }
+// 
+//   ROS_DEBUG("Note: To demonstrate the new API interfaces, wmdemo no longer "
+//          "enables messages by default.\n"
+//          "Output can be gathered through the new state-based interface (s), "
+//          "or by enabling the messages interface (m).\n");
+// 
+//   set_led_state(wiimote, CWIID_LED1_ON);
+//   rpt_mode |=  CWIID_RPT_BTN;
+//   set_rpt_mode(wiimote, rpt_mode);
+//   cwiid_enable(wiimote, CWIID_FLAG_MESG_IFC);
   number_publisher =  node.advertise<std_msgs::Int32>("/numbers", 10);
 	
   /////////////////////////////////////////////////////////////////
@@ -214,9 +277,15 @@ int main(int argc, char **argv)
    * A count of how many messages we have sent. This is used to create
    * a unique string for each message.
    */
-  int count = 0;
+//  int count = 0;
+  ptrWiimote = NULL;
   while (ros::ok())
   {
+    // try to connect if it is not
+    if ( ptrWiimote == NULL )
+    {
+        ptrWiimote = askConnection();
+    }
 //    /**
 //     * This is a message object. You stuff it with data, and then publish it.
 //     */
@@ -246,12 +315,14 @@ int main(int argc, char **argv)
   ///////////////////////////////////////////////////////////////////////////////
   // finalizacion wiimote
   ///////////////////////////////////////////////////////////////////////////////
-  if (cwiid_close(wiimote)) 
+  if (cwiid_close(ptrWiimote)) 
   {
     ROS_ERROR("Error on wiimote disconnect\n");
+    led::all_off();
     return -1;
   }
 
+  led::all_off();
   return 0;
 }
 
