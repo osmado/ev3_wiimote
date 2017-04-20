@@ -15,9 +15,10 @@ Sytem info:
 Kernel: 3.16.7-ckt21-9-ev3dev-ev3
 
 In order to launch ros automatically at start time I create a small systemd service.  It executes a script that configure ROS and launch ev3_wiimote.  Next configuration is needed in order to run it:
-	- ev3_wiimote.lauch --> /home/robot/ev3_ros_robot/
-	- MandoWii.sh --> /home/robot/ev3_ros_robot/
-        - Wiimote.service -->/etc/systemd/system/
+
+- ev3_wiimote.lauch --> /home/robot/ev3_ros_robot/
+- MandoWii.sh --> /home/robot/ev3_ros_robot/
+- Wiimote.service -->/etc/systemd/system/
 
 NOTE 1: this files use /home/robot/ev3_ros_robot/ as path of the ros workspace directory.  Modify this tree files with your current ros worspace directory.
 
