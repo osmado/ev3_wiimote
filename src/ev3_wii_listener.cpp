@@ -3,6 +3,7 @@
 #include "ev3_wiimote/State.h"
 #include <iostream>
 #include "ev3_wiimote/ev3dev.h"
+#include <cwiid.h>
 
 using namespace ev3dev;
 
@@ -15,6 +16,9 @@ void wii_buttons_callback_int(const std_msgs::Int32::ConstPtr& msg)
   ROS_INFO("Received [%d]",msg->data);
   if ((msg->data & 0x0002) == 0x0002)  // forward
   {
+    ptr_m_l->set_duty_cycle_sp(75);
+    ptr_m_r->set_duty_cycle_sp(75);
+ 
     if ((msg->data & 0x0800) == 0x0800) // left
     {
       ptr_m_l->set_polarity(large_motor::polarity_inversed);
@@ -43,25 +47,26 @@ void wii_buttons_callback_int(const std_msgs::Int32::ConstPtr& msg)
 void wii_buttons_callback(const ev3_wiimote::State& msg)
 {
   // wiimote::State::MSG_BTN_1]
-  if (msg.buttons[ev3_wiimote::State::MSG_BTN_1] == true)
+  if (msg.nunchuk_joystick_raw[CWIID_X] > 0) 
   {
-    if (status_motor == 0)
-    {
-      ROS_INFO("Go");
-      status_motor = 1;
+      ptr_m_l->set_duty_cycle_sp(msg.nunchuk_joystick_raw[CWIID_Y]);
+      ptr_m_r->set_duty_cycle_sp(msg.nunchuk_joystick_raw[CWIID_Y]-25);
+  }
+  else if (msg.nunchuk_joystick_raw[CWIID_X] < 0) 
+  {   
+      ptr_m_l->set_duty_cycle_sp(msg.nunchuk_joystick_raw[CWIID_Y]-25);
+      ptr_m_r->set_duty_cycle_sp(msg.nunchuk_joystick_raw[CWIID_Y]);
+  }  
+
+  if (msg.nunchuk_joystick_raw[CWIID_Y] > 0) 
+  {
       ptr_m_l->run_forever();
       ptr_m_r->run_forever();
-    }
   }
   else
   {
-    if (status_motor == 1)
-    {
-      ROS_INFO("Stop");
-      status_motor = 0;
       ptr_m_l->stop();
       ptr_m_r->stop();
-    }
   } 
 }
 

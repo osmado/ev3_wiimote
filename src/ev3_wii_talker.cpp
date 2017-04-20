@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "ev3_wiimote/ev3dev.h"
+#include "ev3_wiimote/State.h"
 #include <bluetooth/bluetooth.h>
 #include <cwiid.h>
 
@@ -15,6 +16,7 @@ void set_rpt_mode(cwiid_wiimote_t *wiimote, unsigned char rpt_mode);
 void print_state(struct cwiid_state *state);
 cwiid_wiimote_t* askConnection();
 ros::Publisher number_publisher;
+ros::Publisher state_publisher;
 cwiid_wiimote_t *ptrWiimote;
 cwiid_err_t err;
 
@@ -113,6 +115,7 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
 				ROS_DEBUG("\n");
 				break;
 			case CWIID_MESG_NUNCHUK:
+        {
 				ROS_DEBUG("Nunchuk Report: btns=%.2X stick=(%d,%d) acc.x=%d acc.y=%d "
 						  "acc.z=%d\n", mesg[i].nunchuk_mesg.buttons,
 						mesg[i].nunchuk_mesg.stick[CWIID_X],
@@ -120,6 +123,21 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
 						mesg[i].nunchuk_mesg.acc[CWIID_X],
 						mesg[i].nunchuk_mesg.acc[CWIID_Y],
 						mesg[i].nunchuk_mesg.acc[CWIID_Z]);
+
+            // nunchuk_joystick_raw msg;
+            ev3_wiimote::State msg;
+            msg.nunchuk_joystick_raw[0] = 0;
+            msg.nunchuk_joystick_raw[1] = 0;
+            if (mesg[i].nunchuk_mesg.stick[CWIID_X] > 150)
+              msg.nunchuk_joystick_raw[0] = 75;
+            else if (mesg[i].nunchuk_mesg.stick[CWIID_X] < 100)
+              msg.nunchuk_joystick_raw[0] = -75;
+ 	          if (mesg[i].nunchuk_mesg.stick[CWIID_Y] > 150)
+               msg.nunchuk_joystick_raw[1] = 75;
+            else if (mesg[i].nunchuk_mesg.stick[CWIID_X] < 100)
+               msg.nunchuk_joystick_raw[1] = -75;
+            state_publisher.publish(msg);
+        }
 				break;
 			case CWIID_MESG_CLASSIC:
 				ROS_DEBUG("Classic Report: btns=%.4X l_stick=(%d,%d) r_stick=(%d,%d) "
@@ -210,7 +228,7 @@ cwiid_wiimote_t* askConnection()
          "or by enabling the messages interface (m).\n");
 
   set_led_state(wiimote, CWIID_LED1_ON);
-  rpt_mode |=  CWIID_RPT_BTN;
+  rpt_mode |=  CWIID_RPT_BTN | CWIID_RPT_NUNCHUK;
   set_rpt_mode(wiimote, rpt_mode);
   cwiid_enable(wiimote, CWIID_FLAG_MESG_IFC);
   led::all_off();
@@ -268,6 +286,7 @@ int main(int argc, char **argv)
 //   set_rpt_mode(wiimote, rpt_mode);
 //   cwiid_enable(wiimote, CWIID_FLAG_MESG_IFC);
   number_publisher =  node.advertise<std_msgs::Int32>("/numbers", 10);
+  state_publisher = node.advertise<ev3_wiimote::State>("/wiimote/state",10);
 	
   /////////////////////////////////////////////////////////////////
   // ros loop
