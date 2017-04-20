@@ -1,0 +1,10 @@
+[Unit]
+Description=My Program
+After=bluetooh.target
+
+[Install]
+WantedBy=bluetooh.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/robot/ev3_ros_robot/MandoWii.sh

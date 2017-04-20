@@ -1,0 +1,4 @@
+<launch>
+    <node name="ev3_wii_listener" pkg="ev3_wiimote" type="ev3_wii_listener"/>
+    <node name="ev3_wii_talker" pkg="ev3_wiimote" type="ev3_wii_talker"/>
+</launch>
